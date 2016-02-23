@@ -1,57 +1,53 @@
 package com.horacio
 
-import java.util.Scanner
+import scala.annotation.tailrec
+import scala.io.StdIn
 
-import com.horacio.helpers.UserInput
-import com.horacio.model.{Animal, Hability}
-import collection.mutable.HashMap
+trait Tree
 
-import scala.collection.mutable
+case class Node(message: String, left: Tree, right: Tree) extends Tree
+
+case class Leaf(message: String) extends Tree
 
 object Game {
-  def start(userInput: UserInput): String = {
-    println("think in an animal...")
-
-    val gameMemory = initGameMemory()
-    askHability(userInput, gameMemory)
+  def main(args: Array[String]) {
+    val tree = Node("Seu animal é um mamífero ?", Leaf("Gato"), Leaf("Peixe"))
+    play(tree)
+    println("Obrigado por jogar!")
   }
 
-  def initGameMemory() = {
-    val habilitiesAndAnimal = new HashMap[String, List[Animal]]()
-    habilitiesAndAnimal += "had a tail" -> List(Animal("Dog", "barks"))
-    habilitiesAndAnimal
+  @tailrec
+  def play(tree: Tree): Unit = {
+    val newTree = traverseTree(tree)
+    println("Vamos jogar novamente ?")
+    val again = StdIn.readLine().toLowerCase
+    if (again == "sim" || again == "s") play(newTree)
   }
 
-  def askHability(userInput: UserInput, memory: HashMap[String, List[Animal]]): String = {
-    val in = userInput.askHability(memory.head._1)
-    in match {
-      case "y" => askHabilityAnimals(userInput: UserInput, memory)
-      case _ => "not impemented yet"
-    }
-  }
-
-  def askHabilityAnimals(userInput: UserInput, memory: HashMap[String, List[Animal]]): String = {
-    val animals = memory.head._2
-
-    def animalRecursion(animals: List[Animal]): String = {
-      val in = userInput.askHability(animals.head.hability)
-      in match {
-        case "y" => askAnimal(userInput: UserInput, animals.head.name)
-        case _ => animalRecursion(animals.tail)
+  def traverseTree(tree: Tree): Tree = tree match {
+    case Leaf(animal) =>
+      println(s"Seu é animal um $animal ?")
+      StdIn.readLine().toLowerCase match {
+        case "s" | "sim" =>
+          println("Show! Eu acertei!")
+          tree
+        case _ => newAnimal(animal)
       }
-    }
-    animalRecursion(animals)
+    case Node(question, yes, no) =>
+      println(question)
+      StdIn.readLine().toLowerCase match {
+        case "s" | "sim" => Node(question, traverseTree(yes), no)
+        case _ => Node(question, yes, traverseTree(no))
+      }
   }
 
-  def askAnimal(userInput: UserInput, animalName: String): String = {
-    val in = userInput.askAnimal(animalName)
-    in match {
-      case "y" => finishGame(animalName)
-      case _ => "not impemented yet"
-    }
+  def newAnimal(oldAnimal: String): Tree = {
+    println("Eu desisto!")
+    println("Qual é o animal que você pensou ?")
+    val animal = StdIn.readLine()
+    println("Digite uma caracteristica desse animal")
+    val question = StdIn.readLine()
+    Node(question, Leaf(animal), Leaf(oldAnimal))
   }
 
-  def finishGame(animal: String): String = {
-    "The animal you thought was a $animal"
-  }
 }
